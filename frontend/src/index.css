@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Kufi Arabic', 'Noto Naskh Arabic', sans-serif;
+    background-color: #0f1117;
+    color: #e8e8ed;
+  }
+
+  /* Background image layer */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('/background.jpg');
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.45) sepia(0.15);
+    z-index: -1;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #3a3b47; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #4a4b57; }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(15, 17, 23, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .glass-light {
+    background: rgba(26, 27, 35, 0.75);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+}

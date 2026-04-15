@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: mustashar-react
+    runtime: node
+    buildCommand: npm install --prefix frontend && npm run build --prefix frontend && cp -r frontend/dist backend/dist && npm install --prefix backend
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
