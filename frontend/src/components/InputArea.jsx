@@ -45,7 +45,7 @@ export default function InputArea({ onSend, isStreaming, isConnected }) {
           className="w-10 h-10 rounded-xl bg-accent hover:bg-accent-light disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0"
         >
           <svg
-            className="w-5 h-5 text-bg-primary rotate-180"
+            className="w-5 h-5 text-bg-primary"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

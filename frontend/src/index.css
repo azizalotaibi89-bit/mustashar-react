@@ -19,15 +19,22 @@
     background-image: url('/background.jpg');
     background-size: cover;
     background-position: center;
-    filter: brightness(0.45) sepia(0.15);
+    filter: brightness(0.25) sepia(0.1);
     z-index: -1;
   }
 
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #3a3b47; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #4a4b57; }
+  /* Dark overlay for extra contrast */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: -1;
+  }
+
+  /* Hide scrollbar everywhere */
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; -ms-overflow-style: none; }
 }
 
 @layer utilities {
