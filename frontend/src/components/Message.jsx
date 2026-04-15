@@ -24,9 +24,7 @@ export default function Message({ role, content, error, loading }) {
   return (
     <div className="flex gap-3 items-start mb-6 animate-fadeUp">
       {/* Avatar */}
-      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden">
-        <img src="/emblem.png" alt="" className="w-5 h-auto" />
-      </div>
+      <img src="/emblem.png" alt="" className="w-7 h-auto flex-shrink-0 mt-1" />
 
       {/* Content */}
       <div className="flex-1 text-sm text-txt-primary leading-loose">
