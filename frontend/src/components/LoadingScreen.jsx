@@ -16,21 +16,13 @@ export default function LoadingScreen({ visible }) {
         style={{ width: '90px', animation: 'introFadeUp 0.8s ease forwards' }}
       />
 
-      {/* Divider */}
-      <div style={{
-        width: '60px',
-        height: '1px',
-        background: 'linear-gradient(to right, transparent, #c8a84e, transparent)',
-        animation: 'introFadeUp 0.8s ease 0.2s both',
-      }} />
-
       {/* Title block */}
       <div className="text-center flex flex-col gap-2"
-        style={{ animation: 'introFadeUp 0.8s ease 0.35s both' }}>
+        style={{ animation: 'introFadeUp 0.8s ease 0.2s both' }}>
         <p className="font-arabic font-bold" style={{ color: '#c8a84e', fontSize: '1.4rem', letterSpacing: '0.05em' }}>
           مستشار الدولة
         </p>
-        <p className="font-arabic" style={{ color: '#7a7b8a', fontSize: '0.8rem', letterSpacing: '0.04em' }}>
+        <p className="font-arabic" style={{ color: '#7a7b8a', fontSize: '1rem', letterSpacing: '0.04em' }}>
           الامانة العامة لمجلس الوزراء
         </p>
       </div>
