@@ -36,10 +36,10 @@
   ::-webkit-scrollbar { display: none; }
   * { scrollbar-width: none; -ms-overflow-style: none; }
 
-  /* Loading screen spinner */
-  @keyframes logoSpin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+  /* Loading screen pulse */
+  @keyframes logoPulse {
+    0%, 100% { transform: scale(1);    opacity: 0.75; }
+    50%       { transform: scale(1.18); opacity: 1;    }
   }
 }
 
