@@ -12,7 +12,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const MODEL = 'claude-sonnet-4-20250514';
-const MAX_CONTEXT_CHUNKS = 25;
+const MAX_CONTEXT_CHUNKS = 35;
 const CHUNKS_FILE = path.join(__dirname, 'data', 'chunks.json');
 
 // ============================================================
@@ -27,7 +27,7 @@ try {
 }
 
 // ============================================================
-// Arabic normalization & BM25 search
+// Arabic normalization & BM25 search (enhanced)
 // ============================================================
 function normalizeArabic(text) {
   return text
@@ -38,33 +38,52 @@ function normalizeArabic(text) {
     .replace(/\u0640/g, '');                             // tatweel
 }
 
+// Strip common Arabic prefixes so "الإيجار" and "إيجار" and "والإيجار" all match
+function stripPrefixes(token) {
+  if (token.length <= 3) return token;
+  // Strip definite article ال
+  if (token.startsWith('ال')) return token.slice(2);
+  // Strip single-char conjunctions/prepositions: و ف ب ل ك
+  if ('وفبلك'.includes(token[0])) {
+    const rest = token.slice(1);
+    // Also strip ال after the prefix (e.g. وال، بال)
+    if (rest.startsWith('ال') && rest.length > 2) return rest.slice(2);
+    if (rest.length > 2) return rest;
+  }
+  return token;
+}
+
 function tokenize(text) {
-  return normalizeArabic(text).match(/[\u0600-\u06FF\u0750-\u077F]+|\d+/g) || [];
+  return (normalizeArabic(text).match(/[\u0600-\u06FF\u0750-\u077F]+|\d+/g) || [])
+    .map(t => stripPrefixes(t));
 }
 
 // Build index at startup
 console.log('🔍 Building search index...');
 const docFreq = {};
 const chunkTokenSets = [];
+const chunkTokenArrays = []; // full arrays for accurate TF counting
 const chunkNormalized = [];
 
 for (const chunk of CHUNKS) {
   const norm = normalizeArabic(chunk.text);
   chunkNormalized.push(norm);
-  const tokens = new Set(tokenize(chunk.text));
-  chunkTokenSets.push(tokens);
-  for (const t of tokens) {
+  const tokens = tokenize(chunk.text);
+  chunkTokenArrays.push(tokens);
+  const tokenSet = new Set(tokens);
+  chunkTokenSets.push(tokenSet);
+  for (const t of tokenSet) {
     docFreq[t] = (docFreq[t] || 0) + 1;
   }
 }
 
 const N = CHUNKS.length;
-const avgDl = chunkTokenSets.reduce((s, t) => s + t.size, 0) / Math.max(N, 1);
+const avgDl = chunkTokenArrays.reduce((s, t) => s + t.length, 0) / Math.max(N, 1);
 console.log(`✅ Index ready (${Object.keys(docFreq).length} unique terms)`);
 
 function searchChunks(query, topK = MAX_CONTEXT_CHUNKS) {
   const queryNorm = normalizeArabic(query);
-  const queryTokens = tokenize(query);
+  const queryTokens = [...new Set(tokenize(query))]; // deduplicated query tokens
   if (!queryTokens.length) return CHUNKS.slice(0, topK);
 
   const k1 = 1.5, b = 0.75;
@@ -72,22 +91,26 @@ function searchChunks(query, topK = MAX_CONTEXT_CHUNKS) {
 
   for (let i = 0; i < CHUNKS.length; i++) {
     let score = 0;
-    const dl = chunkTokenSets[i].size;
+    const dl = chunkTokenArrays[i].length;
 
     for (const token of queryTokens) {
       if (!chunkTokenSets[i].has(token)) {
-        if (token.length > 2 && chunkNormalized[i].includes(token)) score += 0.5;
+        // Substring fallback on normalized text (catches partial/root matches)
+        if (token.length > 2 && chunkNormalized[i].includes(token)) score += 0.8;
         continue;
       }
-      const tf = (chunkNormalized[i].match(new RegExp(token, 'g')) || []).length;
+      // Accurate TF: count exact token occurrences in the token array
+      const tf = chunkTokenArrays[i].filter(t => t === token).length;
       const df = docFreq[token] || 1;
       const idf = Math.log((N - df + 0.5) / (df + 0.5) + 1);
       const tfNorm = (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * dl / Math.max(avgDl, 1)));
       score += idf * tfNorm;
     }
 
-    if (chunkNormalized[i].includes(queryNorm)) score *= 3.0;
+    // Boost if exact normalized query appears in chunk
+    if (queryNorm.length > 4 && chunkNormalized[i].includes(queryNorm)) score *= 3.0;
 
+    // Boost for trigram phrase matches
     if (queryTokens.length >= 3) {
       for (let j = 0; j <= queryTokens.length - 3; j++) {
         const trigram = queryTokens.slice(j, j + 3).join(' ');
@@ -95,11 +118,20 @@ function searchChunks(query, topK = MAX_CONTEXT_CHUNKS) {
       }
     }
 
+    // Boost for bigram matches
+    if (queryTokens.length >= 2) {
+      for (let j = 0; j <= queryTokens.length - 2; j++) {
+        const bigram = queryTokens.slice(j, j + 2).join(' ');
+        if (chunkNormalized[i].includes(bigram)) score *= 1.2;
+      }
+    }
+
+    // Boost if query tokens appear in the section title
     const chunk = CHUNKS[i];
     if (chunk.section) {
-      const sectionNorm = normalizeArabic(chunk.section);
+      const sectionTokens = new Set(tokenize(chunk.section));
       for (const token of queryTokens) {
-        if (sectionNorm.includes(token)) score *= 1.3;
+        if (sectionTokens.has(token)) score *= 1.4;
       }
     }
 
@@ -108,10 +140,11 @@ function searchChunks(query, topK = MAX_CONTEXT_CHUNKS) {
 
   scores.sort((a, b) => b[0] - a[0]);
 
+  // Include neighboring chunks for continuity
   const topIndices = new Set(scores.slice(0, topK).map(([, i]) => i));
   const neighborEntries = [];
 
-  for (const [score, idx] of scores.slice(0, Math.min(10, scores.length))) {
+  for (const [score, idx] of scores.slice(0, Math.min(15, scores.length))) {
     for (const neighbor of [idx - 1, idx + 1]) {
       if (neighbor >= 0 && neighbor < N && !topIndices.has(neighbor)) {
         topIndices.add(neighbor);
