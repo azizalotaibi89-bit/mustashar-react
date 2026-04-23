@@ -58,11 +58,6 @@ export default function InputArea({ onSend, isStreaming, isConnected }) {
           </svg>
         </button>
       </div>
-      <p className="text-center text-xs text-txt-muted mt-2 leading-relaxed">
-        مساعد استرشادي للقوانين الكويتية — لا يُغني عن الاستشارة القانونية المتخصصة
-        <br />
-        التشريعات محدثة حتى 4/11/2025 — إعداد المستشار جزاء العتيبي
-      </p>
     </div>
   );
 }
