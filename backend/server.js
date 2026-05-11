@@ -11,7 +11,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_CONTEXT_CHUNKS = 35;
 const CHUNKS_FILE = path.join(__dirname, 'data', 'chunks.json');
 
