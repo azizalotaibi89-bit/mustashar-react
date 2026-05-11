@@ -91,8 +91,8 @@ export function formatMarkdown(text) {
         i++;
       }
       elements.push(
-        <blockquote key={key++} className="border-r-4 border-accent pr-4 py-3 my-3 bg-bg-secondary rounded-l-lg font-mono text-sm leading-relaxed" style={{direction:'rtl', borderRightColor:'rgba(180,140,60,0.8)', background:'rgba(180,140,60,0.08)'}}>
-          {quoteLines.map((l, idx) => <p key={idx} className="text-accent-light">{parseInline(l)}</p>)}
+        <blockquote key={key++} className="border-r-4 pr-4 py-3 my-3 rounded-lg text-base leading-relaxed" style={{direction:'rtl', borderRightColor:'rgba(180,140,60,1)', background:'rgba(180,140,60,0.12)', borderRadius:'0 8px 8px 0'}}>
+          {quoteLines.map((l, idx) => <p key={idx} className="font-bold" style={{color:'#f0d070', fontWeight:700, fontSize:'0.95rem', lineHeight:'1.9'}}>{parseInline(l)}</p>)}
         </blockquote>
       );
       continue;
