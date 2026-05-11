@@ -70,6 +70,7 @@ export default function App() {
                 content={msg.content}
                 error={msg.error}
                 loading={msg.loading}
+                id={msg.id}
               />
             ))
           )}

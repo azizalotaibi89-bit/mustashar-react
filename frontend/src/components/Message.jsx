@@ -1,16 +1,38 @@
+import { useEffect, useState } from 'react';
 import { formatMarkdown } from '../utils/markdown.jsx';
 
-function TypingIndicator() {
+function TypingIndicator({ startTime }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const hint =
+    elapsed >= 25 ? 'يعالج النصوص القانونية... لحظة' :
+    elapsed >= 10 ? 'جارٍ معالجة طلبك...' :
+    null;
+
   return (
-    <div className="flex gap-1 py-2">
-      <span className="w-2 h-2 rounded-full bg-accent animate-blink" />
-      <span className="w-2 h-2 rounded-full bg-accent animate-blink2" />
-      <span className="w-2 h-2 rounded-full bg-accent animate-blink3" />
+    <div className="flex items-center gap-3 py-2">
+      <div className="flex gap-1">
+        <span className="w-2 h-2 rounded-full bg-accent animate-blink" />
+        <span className="w-2 h-2 rounded-full bg-accent animate-blink2" />
+        <span className="w-2 h-2 rounded-full bg-accent animate-blink3" />
+      </div>
+      {hint && (
+        <span className="text-txt-secondary text-xs opacity-60 transition-opacity duration-500">
+          {hint}
+        </span>
+      )}
     </div>
   );
 }
 
-export default function Message({ role, content, error, loading }) {
+export default function Message({ role, content, error, loading, id }) {
   if (role === 'user') {
     return (
       <div className="flex justify-start mb-6 animate-fadeUp">
@@ -28,7 +50,7 @@ export default function Message({ role, content, error, loading }) {
 
       {/* Content */}
       <div className="flex-1 text-sm text-txt-primary leading-loose">
-        {loading && <TypingIndicator />}
+        {loading && <TypingIndicator startTime={id || Date.now()} />}
 
         {!loading && error && (
           <div className="bg-red-900/20 border border-red-500/30 text-red-300 px-4 py-2 rounded-lg text-sm">
@@ -37,7 +59,7 @@ export default function Message({ role, content, error, loading }) {
         )}
 
         {!loading && !error && !content && (
-          <span className="text-txt-secondary opacity-50 text-sm">—</span>
+          <span className="text-txt-secondary opacity-40 text-sm">—</span>
         )}
 
         {content && formatMarkdown(content)}

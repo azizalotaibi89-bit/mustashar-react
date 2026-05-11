@@ -12,7 +12,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const MODEL = 'claude-haiku-4-5-20251001';
-const MAX_CONTEXT_CHUNKS = 20;
+const MAX_CONTEXT_CHUNKS = 15;
 const CHUNKS_FILE = path.join(__dirname, 'data', 'chunks.json');
 
 // ============================================================
@@ -353,6 +353,12 @@ app.post('/api/chat', async (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
+  // SSE keep-alive: prevents Render proxy from closing idle SSE connections
+  // while waiting for Anthropic's first token (can take 5-15s on large prompts)
+  const keepAlive = setInterval(() => {
+    if (!res.writableEnded) res.write(': ping\n\n');
+  }, 10000);
+
   try {
     const client = new Anthropic({ apiKey: key });
     const stream = await client.messages.stream({
@@ -382,6 +388,8 @@ app.post('/api/chat', async (req, res) => {
       err?.status === 529 ? 'الخادم مُثقَل حالياً — أعد المحاولة بعد لحظات' :
       `حدث خطأ: ${err.message}`;
     res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+  } finally {
+    clearInterval(keepAlive);
   }
 
   res.write('data: [DONE]\n\n');
