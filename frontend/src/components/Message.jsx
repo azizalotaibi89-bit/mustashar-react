@@ -1,4 +1,4 @@
-import { formatMarkdown } from '../utils/markdown';
+import { formatMarkdown } from '../utils/markdown.jsx';
 
 function TypingIndicator() {
   return (
@@ -29,17 +29,18 @@ export default function Message({ role, content, error, loading }) {
       {/* Content */}
       <div className="flex-1 text-sm text-txt-primary leading-loose">
         {loading && <TypingIndicator />}
+
         {!loading && error && (
           <div className="bg-red-900/20 border border-red-500/30 text-red-300 px-4 py-2 rounded-lg text-sm">
-            {error}
+            ⚠️ {error}
           </div>
         )}
+
+        {!loading && !error && !content && (
+          <span className="text-txt-secondary opacity-50 text-sm">—</span>
+        )}
+
         {content && formatMarkdown(content)}
-        {!loading && error && content && (
-          <div className="bg-red-900/20 border border-red-500/30 text-red-300 px-4 py-2 rounded-lg text-sm mt-2">
-            {error}
-          </div>
-        )}
       </div>
     </div>
   );

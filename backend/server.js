@@ -12,7 +12,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const MODEL = 'claude-haiku-4-5-20251001';
-const MAX_CONTEXT_CHUNKS = 35;
+const MAX_CONTEXT_CHUNKS = 20;
 const CHUNKS_FILE = path.join(__dirname, 'data', 'chunks.json');
 
 // ============================================================
@@ -357,20 +357,29 @@ app.post('/api/chat', async (req, res) => {
     const client = new Anthropic({ apiKey: key });
     const stream = await client.messages.stream({
       model: MODEL,
-      max_tokens: 4096,
+      max_tokens: 2048,
       system: systemPrompt,
       messages
     });
 
+    let sentTokens = 0;
     for await (const chunk of stream) {
       if (chunk.type === 'content_block_delta' && chunk.delta?.type === 'text_delta') {
+        sentTokens++;
         res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`);
       }
     }
+
+    // If stream completed with zero tokens, treat as empty response
+    if (sentTokens === 0) {
+      res.write(`data: ${JSON.stringify({ error: 'الخادم لم يُنتج ردّاً — أعد المحاولة' })}\n\n`);
+    }
   } catch (err) {
+    console.error('Anthropic error:', err?.status, err?.message);
     const msg =
       err?.status === 401 ? 'مفتاح API غير صحيح' :
-      err?.status === 429 ? 'تم تجاوز حد الاستخدام. حاول لاحقاً' :
+      err?.status === 429 ? 'تم تجاوز حد الاستخدام — انتظر دقيقة وأعد المحاولة' :
+      err?.status === 529 ? 'الخادم مُثقَل حالياً — أعد المحاولة بعد لحظات' :
       `حدث خطأ: ${err.message}`;
     res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
   }
