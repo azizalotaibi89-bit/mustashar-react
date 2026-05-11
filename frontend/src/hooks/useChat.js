@@ -20,15 +20,24 @@ export function useChat() {
     let fullText = '';
 
     try {
-      const res = await fetch(`${BACKEND}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          history: history.slice(-12),
-          api_key: apiKey,
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout
+
+      let res;
+      try {
+        res = await fetch(`${BACKEND}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            history: history.slice(-12),
+            api_key: apiKey,
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!res.ok) {
         let errMsg = `خطأ من السيرفر (${res.status})`;
@@ -87,8 +96,12 @@ export function useChat() {
       ]);
 
     } catch (err) {
+      const isTimeout = err.name === 'AbortError';
+      const errMsg = isTimeout
+        ? 'انتهت مهلة الانتظار. الخادم قد يكون في وضع السكون — أعد المحاولة بعد 30 ثانية'
+        : (err.message || 'خطأ في الاتصال');
       setMessages(prev => prev.map(m =>
-        m.id === assistantId ? { ...m, content: '', error: err.message, loading: false } : m
+        m.id === assistantId ? { ...m, content: '', error: errMsg, loading: false } : m
       ));
     } finally {
       setIsStreaming(false);
